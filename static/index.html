@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{site}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="landing">
+  <header class="topbar sticky"><div class="container">
+    <a class="brand" href="./"><span class="logo">▶</span><span data-site-name></span></a>
+    <nav class="row" id="nav"></nav>
+  </div></header>
+
+  <section class="hero-wrap">
+    <div class="blob b1"></div><div class="blob b2"></div>
+    <div class="hero container">
+      <span class="pill">🎓 کلاس آنلاین زنده</span>
+      <h1 id="hero-title"></h1>
+      <p id="hero-sub"></p>
+      <div class="row" style="justify-content:center">
+        <a class="btn primary lg" href="login.html?tab=register" id="cta">شروع رایگان</a>
+        <a class="btn lg" href="#plans">مشاهدهٔ پلن‌ها</a>
+      </div>
+      <div class="mock" aria-hidden="true">
+        <div class="mock-bar"><i></i><i></i><i></i></div>
+        <div class="mock-body">
+          <div class="mock-slide"><b>اسلاید ۱</b><span></span><span></span><span class="short"></span></div>
+          <div class="mock-side"><div class="mock-cam"></div><div class="mock-cam c2"></div><div class="mock-chat"><span></span><span></span><span class="short"></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container section">
+    <h2 class="sec-title">هر چه برای یک کلاس خوب لازم است</h2>
+    <div class="grid feats">
+      <div class="card feature"><div class="ico">🎥</div><h3>ویدیو و صدای باکیفیت</h3><p class="muted">کنفرانس چندنفره با تنظیم خودکار کیفیت. پنجرهٔ تصویر فقط برای کسانی باز می‌شود که دوربینشان روشن است.</p></div>
+      <div class="card feature"><div class="ico">📄</div><h3>ارائهٔ PDF و پاورپوینت</h3><p class="muted">فایل را بارگذاری کنید، ورق بزنید و روی آن بنویسید. دانش‌آموزان همزمان می‌بینند و فقط مدرس می‌تواند تغییر دهد.</p></div>
+      <div class="card feature"><div class="ico">✏️</div><h3>وایت‌بورد مشترک</h3><p class="muted">نوشتن و ترسیم زنده روی تخته با چند صفحه، پاک‌کن و واگرد.</p></div>
+      <div class="card feature"><div class="ico">🖥️</div><h3>اشتراک صفحه</h3><p class="muted">نمایش کل صفحه، یک پنجره یا یک تب برای همهٔ شرکت‌کنندگان.</p></div>
+      <div class="card feature"><div class="ico">✋</div><h3>چت و بالا بردن دست</h3><p class="muted">گفتگوی متنی و درخواست اجازهٔ صحبت در کلاس‌های شلوغ.</p></div>
+      <div class="card feature"><div class="ico">🔐</div><h3>مدیریت دسترسی</h3><p class="muted">رمز اتاق، نقش میزبان و ارائه‌دهنده، بی‌صدا کردن و حذف افراد، ضبط جلسه.</p></div>
+    </div>
+  </section>
+
+  <section class="container section">
+    <h2 class="sec-title">در سه قدم شروع کنید</h2>
+    <div class="grid steps">
+      <div class="step"><span class="num">۱</span><h3>ثبت‌نام</h3><p class="muted">با ایمیل حساب بسازید.</p></div>
+      <div class="step"><span class="num">۲</span><h3>ساخت اتاق</h3><p class="muted">یک اتاق بسازید و لینکش را برای دانش‌آموزان بفرستید.</p></div>
+      <div class="step"><span class="num">۳</span><h3>شروع کلاس</h3><p class="muted">وارد شوید، فایل ارائه کنید و تدریس کنید.</p></div>
+    </div>
+  </section>
+
+  <section class="container section" id="plans">
+    <h2 class="sec-title">پلن‌ها و قیمت‌ها</h2>
+    <div class="grid" id="plan-grid"></div>
+  </section>
+
+  <footer class="footer container" id="footer"></footer>
+  <script src="config.js"></script>
+  <script type="module" src="index.js"></script>
+</body>
+</html>

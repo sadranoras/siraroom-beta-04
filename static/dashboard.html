@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>داشبورد | {site}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="topbar"><div class="container">
+    <a class="brand" href="./" data-site-name></a>
+    <nav class="row"><span class="muted" id="who"></span><a class="btn sm hidden" id="admin-link" href="admin.html">پنل مدیریت</a><button class="btn sm" id="logout">خروج</button></nav>
+  </div></header>
+  <main class="container" style="padding-top:1.5rem;padding-bottom:3rem">
+    <div class="card row spread" id="plan-box" style="margin-bottom:1.25rem"></div>
+    <div class="tabs">
+      <button class="tab active" data-tab="rooms">اتاق‌های من</button>
+      <button class="tab" data-tab="plans">پلن‌ها و خرید</button>
+      <button class="tab" data-tab="payments">پرداخت‌ها</button>
+      <button class="tab" data-tab="profile">حساب کاربری</button>
+    </div>
+    <section id="t-rooms"></section>
+    <section id="t-plans" class="hidden"></section>
+    <section id="t-payments" class="hidden"></section>
+    <section id="t-profile" class="hidden"></section>
+  </main>
+  <script src="config.js"></script>
+  <script type="module" src="dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>اتاق</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="room">
+  <!-- Pre-join screen -->
+  <main class="prejoin" id="prejoin">
+    <h2 id="pj-title">...</h2>
+    <p class="muted" id="pj-sub"></p>
+    <div id="pj-form" class="hidden">
+      <div id="pj-name-wrap"><label>نام شما</label><input id="pj-name" maxlength="40" autocomplete="name"></div>
+      <div id="pj-pw-wrap" class="hidden"><label>رمز اتاق</label><input id="pj-pw" type="password" class="ltr"></div>
+      <div class="check"><input type="checkbox" id="pj-mic" checked><span>میکروفن روشن باشد</span></div>
+      <div class="check"><input type="checkbox" id="pj-cam" checked><span>دوربین روشن باشد</span></div>
+      <p id="pj-err" style="color:#f87171"></p>
+      <button class="btn primary" style="width:100%" id="pj-go">ورود به اتاق</button>
+      <p class="muted" id="pj-login" style="text-align:center;margin-top:.75rem"></p>
+    </div>
+  </main>
+
+  <!-- Room -->
+  <div class="room-app hidden" id="app">
+    <div class="room-top">
+      <div class="row"><span class="title" id="r-title"></span><span class="badge" id="r-count"></span><span class="rec-badge hidden" id="r-rec">● در حال ضبط</span></div>
+      <div class="row"><span class="muted" id="r-timer">00:00</span><button class="btn sm" id="r-copy">کپی لینک</button></div>
+    </div>
+    <div class="room-main" id="main">
+      <div class="stage" id="stage">
+        <div class="focus" id="focus"></div>
+        <div class="tiles" id="tiles"></div>
+        <div class="stage-empty hidden" id="stage-empty">دوربین هیچ‌کس روشن نیست.<br>افراد حاضر در تب «افراد» دیده می‌شوند.</div>
+      </div>
+      <aside class="sidebar" id="sidebar">
+        <div class="tabs"><button class="tab active" data-p="chat">گفتگو</button><button class="tab" data-p="people">افراد (<span id="pc">0</span>)</button></div>
+        <div class="panel" id="p-chat">
+          <div class="msgs" id="msgs"></div>
+          <form class="chat-form" id="chat-form"><input id="chat-in" placeholder="پیام..." maxlength="500" autocomplete="off"><button class="btn primary sm">ارسال</button></form>
+        </div>
+        <div class="panel hidden" id="p-people"><div class="plist" id="plist"></div></div>
+      </aside>
+    </div>
+    <div class="controls">
+      <button class="cbtn" id="b-mic">میکروفن</button>
+      <button class="cbtn" id="b-cam">دوربین</button>
+      <button class="cbtn" id="b-screen">اشتراک صفحه</button>
+      <button class="cbtn" id="b-wb">وایت‌بورد</button>
+      <button class="cbtn hidden" id="b-doc">📄 ارائه فایل</button>
+      <button class="cbtn" id="b-hand">✋ دست</button>
+      <button class="cbtn hidden" id="b-rec">ضبط</button>
+      <button class="cbtn hidden" id="b-muteall">بی‌صدا کردن همه</button>
+      <button class="cbtn" id="b-side">پنل کناری</button>
+      <button class="cbtn leave hidden" id="b-end">پایان جلسه برای همه</button>
+      <button class="cbtn leave" id="b-leave">خروج</button>
+    </div>
+  </div>
+  <script src="config.js"></script>
+  <script type="module" src="room.js"></script>
+</body>
+</html>

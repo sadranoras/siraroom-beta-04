@@ -1,0 +1,15 @@
+name = "classroom-api"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# 1) create the database once:   npx wrangler d1 create classroom
+# 2) paste the database_id it prints below
+[[d1_databases]]
+binding = "DB"
+database_name = "classroom"
+database_id = "50d42d8a-012f-4a8f-a40d-aa524349057e"
+
+# Non-secret settings (secrets are set with `npx wrangler secret put NAME`, see README.md)
+# [vars]
+# SITE_URL = "https://your-site.example"
+# ALLOWED_ORIGIN = "https://your-site.example"

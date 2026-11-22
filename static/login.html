@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ورود | {site}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="topbar"><div class="container"><a class="brand" href="./" data-site-name></a></div></header>
+  <main class="auth-box card">
+    <div class="tabs">
+      <button class="tab active" data-tab="login">ورود</button>
+      <button class="tab" data-tab="register" id="reg-tab">ثبت‌نام</button>
+    </div>
+    <form id="login">
+      <label>ایمیل</label><input name="email" type="email" class="ltr" required autocomplete="username">
+      <label>رمز عبور</label><input name="password" type="password" class="ltr" required autocomplete="current-password">
+      <p class="muted" id="err-login" style="color:var(--danger)"></p>
+      <button class="btn primary" style="width:100%;margin-top:.5rem">ورود</button>
+    </form>
+    <form id="register" class="hidden">
+      <label>نام و نام خانوادگی</label><input name="name" required minlength="2" autocomplete="name">
+      <label>ایمیل</label><input name="email" type="email" class="ltr" required autocomplete="username">
+      <label>رمز عبور (حداقل ۸ کاراکتر)</label><input name="password" type="password" class="ltr" required minlength="8" autocomplete="new-password">
+      <p class="muted" id="err-register" style="color:var(--danger)"></p>
+      <button class="btn primary" style="width:100%;margin-top:.5rem">ساخت حساب</button>
+    </form>
+  </main>
+  <script src="config.js"></script>
+  <script type="module" src="auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+# Render Blueprint: publishes the static site from the "static" folder (no build step).
+services:
+  - type: web
+    name: classroom
+    runtime: static
+    staticPublishPath: ./static
