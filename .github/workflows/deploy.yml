@@ -1,5 +1,5 @@
 
-name: Deploy React to InfinityFree
+name: Deploy to InfinityFree
 
 on:
   push:
@@ -14,18 +14,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
       - name: Deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
@@ -34,5 +22,5 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftp
           port: 21
-          local-dir: ./dist/
+          local-dir: ./static/
           server-dir: /htdocs/
