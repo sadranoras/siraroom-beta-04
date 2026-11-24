@@ -231,3 +231,16 @@ body { -webkit-font-smoothing: antialiased; }
 .xfer-bar { height: 8px; border-radius: 99px; background: #262d49; overflow: hidden; }
 .xfer-bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #6366f1, #22d3ee); transition: width .12s linear; }
 .xfer-sub { margin-top: .4rem; font-size: .78rem; color: #9aa3c4; text-align: center; }
+
+/* layout choices */
+.stage.lay-one .tiles { grid-template-columns: 1fr; }
+.stage.lay-one.has-focus .tiles { grid-auto-columns: 280px; }
+.stage.lay-side.has-focus { flex-direction: row; }
+.stage.lay-side.has-focus .tiles { flex: 0 0 32%; height: auto; grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: 1fr; overflow-y: auto; overflow-x: hidden; }
+.stage.lay-hide .tiles { flex: 1; height: auto; }
+.tile.hidden { display: none; }
+.lay-modal b { display: block; margin: .6rem 0 .3rem; }
+.lay-grp { display: flex; flex-wrap: wrap; gap: .4rem .9rem; }
+.lay-opt { display: inline-flex; gap: .3rem; align-items: center; cursor: pointer; }
+.lay-pin { width: 100%; margin-top: .4rem; }
+@media (max-width: 700px) { .stage.lay-side.has-focus { flex-direction: column; } .stage.lay-side.has-focus .tiles { flex: none; height: 130px; grid-auto-flow: column; grid-auto-columns: 150px; grid-template-columns: none; overflow-x: auto; overflow-y: hidden; } }

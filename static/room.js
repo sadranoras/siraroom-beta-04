@@ -15,6 +15,11 @@ let docLoaded = null, docChain = Promise.resolve();
 const tiles = new Map();          // identity -> tile elements (only people whose camera is on)
 const screens = new Map();        // identity -> remote screen-share video track
 const hands = new Set();          // identities with raised hand
+const LAYKEY = 'cr-layout';
+const DEFAULT_LAYOUT = { tiles: 'all', content: 'big', pin: '' };   // tiles: all | one | none ; content: big | side | hide
+let layout = { ...DEFAULT_LAYOUT };
+try { layout = { ...DEFAULT_LAYOUT, ...JSON.parse(localStorage.getItem(LAYKEY) || '{}') }; } catch { /* ignore */ }
+let hostLayout = null;            // last layout the host pushed (re-sent to late joiners)
 const speaking = new Set();       // identities currently speaking
 let focusVideo, wbWrap, docWrap;
 
@@ -126,6 +131,7 @@ async function start({ mic, cam }) {
     const ids = new Set(sp.map((s) => s.identity));
     speaking.clear(); ids.forEach((i) => speaking.add(i));
     for (const [id, t] of tiles) t.el.classList.toggle('speaking', ids.has(id));
+    if (layout.tiles === 'one' && !layout.pin && ids.size) applyLayout();
     $$('#plist .pitem').forEach((row) => row.classList.toggle('speaking', ids.has(row.dataset.id)));
   });
   on(RoomEvent.ParticipantMetadataChanged, (_old, p) => {
@@ -215,8 +221,49 @@ function tileFor(p) {
   return t;
 }
 
+function pickOne() {                 // the single tile shown in 'one' mode
+  if (layout.pin && tiles.has(layout.pin)) return layout.pin;
+  for (const id of speaking) if (tiles.has(id)) return id;
+  for (const p of room?.remoteParticipants.values() || []) if (roleOf(p) === 'host' && tiles.has(p.identity)) return p.identity;
+  return [...tiles.keys()].find((id) => id !== room?.localParticipant.identity) || [...tiles.keys()][0];
+}
+function applyLayout() {
+  const st = $('#stage');
+  if (!st) return;
+  const one = layout.tiles === 'one' ? pickOne() : null;
+  for (const [id, t] of tiles) t.el.classList.toggle('hidden', layout.tiles === 'none' || (layout.tiles === 'one' && id !== one));
+  st.classList.toggle('lay-one', layout.tiles === 'one');
+  st.classList.toggle('lay-side', layout.content === 'side');
+  st.classList.toggle('lay-hide', layout.content === 'hide');
+  renderFocus();
+}
+function setLayout(v, save = true) {
+  layout = { ...DEFAULT_LAYOUT, ...layout, ...v };
+  if (save) { try { localStorage.setItem(LAYKEY, JSON.stringify(layout)); } catch { /* ignore */ } }
+  applyLayout();
+}
+function openLayoutModal() {
+  const host = isHost();
+  const names = [...tiles.entries()].map(([id, t]) => [id, t.nameEl.textContent]);
+  const opt = (g, v, label) => `<label class="lay-opt"><input type="radio" name="${g}" value="${v}" ${layout[g] === v ? 'checked' : ''}> ${label}</label>`;
+  const m = modal(`<div class="lay-modal"><h3>چیدمان صفحه</h3>
+    <p class="muted" style="margin:0 0 .6rem">این تنظیمات فقط روی صفحهٔ خود شما اثر می‌گذارد.${host ? ' با «اعمال برای همه» چیدمان شما برای همهٔ شرکت‌کنندگان تنظیم می‌شود.' : ''}</p>
+    <b>تصویر شرکت‌کنندگان</b>
+    <div class="lay-grp">${opt('tiles', 'all', 'همه')}${opt('tiles', 'one', 'فقط یک نفر')}${opt('tiles', 'none', 'هیچ‌کدام')}</div>
+    <select id="lay-pin" class="lay-pin"><option value="">خودکار (سخنگو / میزبان)</option>${names.map(([id, n]) => `<option value="${esc(id)}" ${layout.pin === id ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
+    <b>محتوای ارائه (وایت‌بورد، فایل، اشتراک صفحه)</b>
+    <div class="lay-grp">${opt('content', 'big', 'بزرگ + تصاویر کوچک')}${opt('content', 'side', 'کنار هم')}${opt('content', 'hide', 'فقط تصاویر')}</div>
+    <div class="actions">${host ? '<button class="btn primary" id="lay-all">اعمال برای همه</button>' : ''}<button class="btn" id="lay-reset">پیش‌فرض</button><button class="btn" data-close>بستن</button></div></div>`);
+  const read = () => ({ tiles: m.el.querySelector('[name=tiles]:checked')?.value || 'all', content: m.el.querySelector('[name=content]:checked')?.value || 'big', pin: m.el.querySelector('#lay-pin').value });
+  m.el.onchange = () => setLayout(read());
+  m.el.querySelector('[data-close]').onclick = m.close;
+  m.el.querySelector('#lay-reset').onclick = () => { setLayout({ ...DEFAULT_LAYOUT }); m.close(); };
+  const all = m.el.querySelector('#lay-all');
+  if (all) all.onclick = () => { hostLayout = read(); setLayout(hostLayout); sendData({ a: 'layout', v: hostLayout }, 'ctl'); toast('چیدمان برای همه اعمال شد'); m.close(); };
+}
+
 function updateStageEmpty() {
-  $('#stage-empty').classList.toggle('hidden', tiles.size > 0 || $('#focus').classList.contains('on'));
+  $('#stage-empty').classList.toggle('hidden', [...tiles.values()].some((t) => !t.el.classList.contains('hidden')) || $('#focus').classList.contains('on'));
 }
 
 function refreshTile(p) {
@@ -228,7 +275,7 @@ function refreshTile(p) {
   if (!camOn) {
     const old = tiles.get(p.identity);
     if (old) { try { cam?.track?.detach(old.video); } catch { /* ignore */ } old.el.remove(); tiles.delete(p.identity); }
-    updateStageEmpty();
+    if (layout.tiles === 'one') applyLayout(); else updateStageEmpty();
     return;
   }
   const t = tileFor(p);
@@ -237,7 +284,7 @@ function refreshTile(p) {
   t.el.classList.toggle('speaking', speaking.has(p.identity));
   t.nameEl.textContent = (p.name || 'کاربر') + (p.isLocal ? ' (شما)' : '');
   t.stateEl.textContent = (hands.has(p.identity) ? '✋ ' : '') + (mic && !mic.isMuted ? '🎙️' : '🔇');
-  updateStageEmpty();
+  applyLayout();
 }
 
 function renderFocus() {
@@ -251,6 +298,7 @@ function renderFocus() {
     track.attach(focusVideo);
     focusVideo.classList.remove('hidden'); on = true;
   }
+  if (layout.content === 'hide') { on = false; focusVideo.classList.add('hidden'); wbWrap.classList.add('hidden'); docWrap.classList.add('hidden'); }
   f.classList.toggle('on', on);
   $('#stage').classList.toggle('has-focus', on);
   updateStageEmpty();
@@ -262,6 +310,21 @@ const clampPage = (n) => Math.max(1, Math.min(5000, Math.round(Number(n)) || 1))
 function sendView(to) { sendData({ a: 'view', v: view, doc: docState }, 'ctl', to); }
 
 /** Make the viewer match docState. Serialised so quick page flips never race a file load. */
+let askTimer = 0;
+function askFile(id) {            // if the file has not arrived (or stalled), ask the host to send it again
+  clearTimeout(askTimer);
+  const last = incoming.get(id)?.got ?? -1;
+  askTimer = setTimeout(() => {
+    if (docBlobs.has(id) || docState?.id !== id) return;
+    const cur = incoming.get(id)?.got ?? -1;
+    if (cur !== last) return askFile(id);
+    const hostIds = [...room.remoteParticipants.values()].filter((p) => roleOf(p) === 'host').map((p) => p.identity);
+    incoming.delete(id);
+    if (hostIds.length) sendData({ t: 'file-req', id }, 'ctl', hostIds);
+    askFile(id);
+  }, 8000);
+}
+
 function syncDoc() {
   docChain = docChain.then(async () => {
     const st = docState;
@@ -270,13 +333,13 @@ function syncDoc() {
       if (docLoaded !== st.id) {
         viewer.setName(st.name);
         const blob = docBlobs.get(st.id);
-        if (!blob) { docLoaded = null; viewer.release(); viewer.message(incoming.has(st.id) ? progressText(st.id) : 'در حال دریافت فایل از میزبان...'); return; }
+        if (!blob) { docLoaded = null; viewer.release(); askFile(st.id); viewer.message(incoming.has(st.id) ? progressText(st.id) : 'در حال دریافت فایل از میزبان...'); return; }
         docLoaded = null;
         await viewer.load(blob);
         docLoaded = st.id;
       }
       if (docState) await viewer.show(docState.page);
-    } catch (e) { if (e.message !== 'superseded') toast('نمایش فایل ناموفق بود', true); }
+    } catch (e) { if (e.message !== 'superseded') { console.error(e); toast('نمایش فایل ناموفق بود: ' + (e.message || ''), true); } }
   });
 }
 
@@ -335,7 +398,7 @@ function onFileChunk(topic, payload) {
   showXfer('دریافت فایل از میزبان', r.got * CHUNK, total * CHUNK, r.t0, r.got === total);
   if (r.got === total) {
     incoming.delete(id);
-    docBlobs.set(id, new Blob(r.parts, { type: 'application/pdf' }));
+    docBlobs.set(id, new Blob(r.parts));
     if (docState?.id === id && view === 'doc') syncDoc();
   }
 }
@@ -407,6 +470,20 @@ function bindControls() {
     if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); docNav({ a: 'next' }); }
     else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); docNav({ a: 'prev' }); }
   });
+  $('#b-layout').onclick = openLayoutModal;
+  const mobile = (navigator.maxTouchPoints || 0) > 0 && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  if (mobile && navigator.mediaDevices?.enumerateDevices) $('#b-flip').classList.remove('hidden');
+  if (navigator.share) $('#b-share').classList.remove('hidden');
+  let facing = 'user';
+  $('#b-flip').onclick = guard(async () => {
+    const pub = lp.getTrackPublication(LK.Track.Source.Camera);
+    if (!pub?.videoTrack) return toast('ابتدا دوربین را روشن کنید', true);
+    facing = facing === 'user' ? 'environment' : 'user';
+    await pub.videoTrack.restartTrack({ facingMode: facing });
+    refreshTile(lp);
+  });
+  $('#b-share').onclick = () => navigator.share({ title: $('#r-title').textContent || 'کلاس آنلاین', url: roomLink(slug) }).catch(() => {});
+  if (!navigator.mediaDevices?.getDisplayMedia) $('#b-screen').title = 'مرورگرهای گوشی از اشتراک‌گذاری صفحه پشتیبانی نمی‌کنند؛ از «ارائه فایل» یا دوربین استفاده کنید';
   $('#b-side').onclick = () => $('#main').classList.toggle('no-side');
   $('#b-muteall').onclick = () => { sendData({ a: 'mute-all' }, 'ctl'); toast('درخواست بی‌صدا کردن برای همه ارسال شد'); };
   $('#b-rec').onclick = guard(() => (recording ? stopRecording() : startRecording()));
@@ -452,10 +529,15 @@ function onData(payload, p, _kind, topic) {
   } else if (topic === 'wb' && p && isStaff(p)) wb?.apply(m);
   else if (topic === 'ann' && p && roleOf(p) === 'host') viewer?.apply(m);
   else if (topic === 'ctl' && p) {
+    if (m.t === 'file-req') {
+      if (isHost() && docBlobs.has(m.id)) sendFile(m.id, docBlobs.get(m.id), [p.identity]);
+      return;
+    }
     if (m.t === 'sync-req') {   // a joiner asks for current state; only hosts answer
       if (!isHost()) return;
       const to = [p.identity];
       sendView(to);
+      if (hostLayout) sendData({ a: 'layout', v: hostLayout }, 'ctl', to);
       if (docState && docBlobs.has(docState.id)) sendFile(docState.id, docBlobs.get(docState.id), to);
       if (recording) sendData({ a: 'rec', on: true }, 'ctl', to);
       (async () => {
@@ -465,7 +547,8 @@ function onData(payload, p, _kind, topic) {
       return;
     }
     if (roleOf(p) !== 'host') return;   // everything below is host-only
-    if (m.a === 'view') applyView(m);
+    if (m.a === 'layout') { if (!isHost() && m.v && typeof m.v === 'object') { hostLayout = null; setLayout({ tiles: ['all', 'one', 'none'].includes(m.v.tiles) ? m.v.tiles : 'all', content: ['big', 'side', 'hide'].includes(m.v.content) ? m.v.content : 'big', pin: typeof m.v.pin === 'string' ? m.v.pin.slice(0, 200) : '' }, false); toast('چیدمان صفحه توسط میزبان تغییر کرد'); } }
+    else if (m.a === 'view') applyView(m);
     else if (m.a === 'page') { if (docState) { docState.page = clampPage(m.page); if (view === 'doc') syncDoc(); } }
     else if (m.a === 'rec') $('#r-rec').classList.toggle('hidden', !m.on);
     else if (m.a === 'mute-all' && !isHost() && room.localParticipant.isMicrophoneEnabled) {
@@ -546,10 +629,10 @@ function openFilesModal() {
   const m = modal(`<div class="files-modal">
     <h3>ارائهٔ فایل</h3>
     <div class="upload-box">
-      <input type="file" id="f-in" accept=".pdf,application/pdf" class="hidden">
-      <button class="btn primary" id="f-pick">انتخاب فایل PDF</button>
+      <input type="file" id="f-in" accept=".pdf,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation" class="hidden">
+      <button class="btn primary" id="f-pick">انتخاب فایل (PDF یا PowerPoint)</button>
       <p class="muted" style="margin:.5rem 0 0">بدون محدودیت حجم (فایل‌های خیلی بزرگ دیرتر به دانش‌آموزان می‌رسند). فایل مستقیماً از مرورگر شما برای شرکت‌کنندگان ارسال می‌شود.
-      برای پاورپوینت: در PowerPoint از File ← Save as ← PDF بگیرید و آن را انتخاب کنید.</p>
+      فایل‌های pptx. مستقیماً نمایش داده می‌شوند؛ اگر طرح‌بندی پیچیده بود (نمودار، SmartArt) بهتر است از PowerPoint خروجی PDF بگیرید.</p>
     </div>
     <div id="f-list"></div>
     <div class="actions"><button class="btn" data-close>بستن</button></div></div>`);
@@ -569,9 +652,11 @@ function openFilesModal() {
     const file = e.target.files[0];
     e.target.value = '';
     if (!file) return;
-    if (!/\.pdf$/i.test(file.name)) return toast('فقط فایل PDF پذیرفته می‌شود. پاورپوینت را به PDF تبدیل کنید.', true);
     const head = new Uint8Array(await file.slice(0, 5).arrayBuffer());
-    if (String.fromCharCode(...head) !== '%PDF-') return toast('این فایل PDF معتبر نیست', true);
+    const sig = String.fromCharCode(...head);
+    const isPdf = sig === '%PDF-', isZip = sig.startsWith('PK');
+    if (/\.ppt$/i.test(file.name)) return toast('فرمت قدیمی ppt. پشتیبانی نمی‌شود؛ آن را به pptx. ذخیره کنید یا PDF بگیرید', true);
+    if (!(isPdf || (isZip && /\.pptx$/i.test(file.name)))) return toast('فقط فایل PDF یا PowerPoint (pptx.) پذیرفته می‌شود', true);
     const id = Date.now();
     docBlobs.set(id, file);
     localFiles.push({ id, name: file.name, size: file.size });

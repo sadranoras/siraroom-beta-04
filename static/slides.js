@@ -3,8 +3,8 @@ import { Whiteboard } from './wb.js';
 
 let pdfjsPromise;
 function loadPdfjs() {
-  pdfjsPromise ||= import(new URL('./vendor/pdf.min.mjs', import.meta.url).href)
-    .then((m) => { m.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.min.mjs', import.meta.url).href; return m; })
+  pdfjsPromise ||= import(new URL('./vendor/pdf.min.js', import.meta.url).href)
+    .then((m) => { m.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.min.js', import.meta.url).href; return m; })
     .catch((e) => { pdfjsPromise = null; throw e; });
   return pdfjsPromise;
 }
@@ -69,16 +69,23 @@ export class SlideViewer {
     this.message('در حال بارگذاری فایل...');
     this.release();
     try {
-      const pdfjs = await loadPdfjs();
-      const source = src instanceof Blob ? { data: new Uint8Array(await src.arrayBuffer()) } : { url: src };
-      const task = pdfjs.getDocument({ ...source, wasmUrl: new URL('./vendor/pdfjs-wasm/', import.meta.url).href, standardFontDataUrl: new URL('./vendor/pdfjs-fonts/', import.meta.url).href, isEvalSupported: false });
-      const pdf = await task.promise;
+      let pdf;
+      const head = src instanceof Blob ? new Uint8Array(await src.slice(0, 4).arrayBuffer()) : null;
+      if (head && head[0] === 0x50 && head[1] === 0x4b) {           // "PK" = zip container = PowerPoint
+        const { openPptx } = await import('./pptx.js');
+        pdf = await openPptx(src);
+      } else {
+        const pdfjs = await loadPdfjs();
+        const source = src instanceof Blob ? { data: new Uint8Array(await src.arrayBuffer()) } : { url: src };
+        const task = pdfjs.getDocument({ ...source, wasmUrl: new URL('./vendor/pdfjs-wasm/', import.meta.url).href, standardFontDataUrl: new URL('./vendor/pdfjs-fonts/', import.meta.url).href, isEvalSupported: false });
+        pdf = await task.promise;
+      }
       if (id !== this.loadId) { pdf.destroy(); throw new Error('superseded'); }
       this.pdf = pdf; this.num = pdf.numPages; this.page = 0;
       this.message('');
       return this.num;
     } catch (e) {
-      if (id === this.loadId) this.message('بارگذاری فایل ناموفق بود');
+      if (id === this.loadId) this.message('بارگذاری فایل ناموفق بود'); console.error('load failed', e);
       throw e;
     }
   }
